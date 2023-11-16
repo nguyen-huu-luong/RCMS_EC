@@ -1,12 +1,31 @@
 import { Link } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
+import axios from "axios"
+import { useCookies, Cookies } from 'react-cookie';
+
 const Login = () => {
 
     let navigate = useNavigate()
-    const handelSignIn = () => {
+    const handelSignIn = async (event) => {
+        event.preventDefault()
+        let userName = event.target.userName.value
+        let password = event.target.password.value
+        await axios.get(`http://localhost:3003/users/auth?userName=${userName}&&password=${password}`)
+            .then(res => {
+                let user= res.data
+                if (user){
+                setCookie('user', user.user_id);
+                }
+            })
+        if (cook.get('user')) {
             navigate('/')
+        }
+        else{
+            alert("Please enter the valid username and password")
+        }
     }
-
+    const [cookies, setCookie, removeCookie] = useCookies();
+    const cook = new Cookies();
     return (
         <>
             <div className="container-fluid w-50 ">

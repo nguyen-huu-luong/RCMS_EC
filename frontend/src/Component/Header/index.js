@@ -3,10 +3,13 @@ import Avatar from "../../Asset/avatar.png"
 import { AiOutlineShoppingCart, AiOutlineSearch } from "react-icons/ai";
 import { useNavigate } from "react-router-dom"
 import Dropdown from 'react-bootstrap/Dropdown'
+import {Cookies } from 'react-cookie';
 
 const Header = () => {
 
     let navigate = useNavigate()
+    const cook = new Cookies();
+    let user = cook.get('user')
     const handelButtonAbout = () => {
         navigate('/about')
     }
@@ -17,10 +20,14 @@ const Header = () => {
         navigate('/product')
     }
     const handelLogout = () => {
+        cook.remove('user')
         navigate('/login')
     }
     const handelCart = () => {
         navigate('/cart')
+    }
+    const handelLogin = () => {
+        navigate('/login')
     }
     return (
         <>
@@ -44,6 +51,9 @@ const Header = () => {
                             </div>
                         </form>
                     </div>
+                    {
+                        user 
+                        ?  <>
                     <div className="mx-4" style={{ cursor: "pointer" }}>
                     <button style={{ display: "inline-block", backgroundColor: "#F99D5A" }} className="border-0" onClick={handelCart}>    <AiOutlineShoppingCart size={25} /> </button>
                     </div>
@@ -58,6 +68,13 @@ const Header = () => {
                             </Dropdown.Menu>
                         </Dropdown>
                     </div>
+                    </>
+                    : <>
+                    <div className="px-4" >
+                    <button className="btn btn-primary"  style={{ display: "inline-block" }} onClick={handelLogin}>Login</button>
+                    </div>
+                    </>
+                    }
                 </div>
             </div>
         </>
