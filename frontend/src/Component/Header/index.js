@@ -42,14 +42,14 @@ const Header = () => {
                 </div>
                 <div className="d-flex justify-content-end w-50 mx-4 align-items-center">
                     <div >
-                        <form>
+                        {/* <form>
                             <div style={{ position: "relative" }}>
                                 <input className="form-control" style={{ width: 400 }} placeholder="Enter your book"></input>
                                 <button className="border-0 bg-white " style={{ position: "absolute", top: 4, right: 10 }}>
                                     <AiOutlineSearch size={20} />
                                 </button>
                             </div>
-                        </form>
+                        </form> */}
                     </div>
                     {
                         user 

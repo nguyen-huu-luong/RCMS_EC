@@ -18,7 +18,6 @@ const Item = ({ id = 1 }) => {
         axios.get(`http://localhost:3003/book/${id}`)
             .then(res => {
                 let book = res.data[0]
-                console.log(book)
                 setItem(book)
 
             })
@@ -46,9 +45,6 @@ const Item = ({ id = 1 }) => {
             let cartItem = { "user_id": user, "book_id": item.book_id, "quantity": parseInt(quantity.current.value) }
             await axios.post("http://localhost:3003/carts", cartItem)
             toast.success("Add to cart successfully");
-        }
-        else {
-            navigate('/login')
         }
     }
     const handelRate = (num) => {
