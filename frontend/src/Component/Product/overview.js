@@ -41,15 +41,17 @@ const OverView = ({ item }) => {
             navigate('/login')
         }
     }
+    const handelDetail = () => {
+        navigate(`/product/${item['book_id']}`)
+        window.location.reload(true)
+    }
     return (
         <>
             <div className="px-2 my-3" style={{ width: 310, height: 200 }} >
                 <div className=" py-2 d-flex justify-content-between px-2 " style={{ border: "1px solid green", display: "inline-block", borderRadius: 10, width: 310, height: 200 }}>
-                    <Link to={`/product/${item['book_id']}`}>
-                        <div style={{ cursor: "pointer", height: "100%" }}>
+                        <div style={{ cursor: "pointer", height: "100%" }} onClick={handelDetail}>
                             <img src={item['image_URL_M']} style={{ width: "90%", height: "100%" }} />
                         </div>
-                    </Link>
                     <div style={{ width: "70%", position: "relative" }} >
                         <p style={{ textAlign: "justify", fontWeight: "bold", width: "90%" }}>{item['book_title']}</p>
                         <div >
