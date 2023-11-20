@@ -6,53 +6,53 @@ import axios from 'axios';
 import { Cookies } from 'react-cookie';
 import { useNavigate } from "react-router-dom"
 
-const Item = ({ id = 1 }) => {
+const Item = ({ item }) => {
     const cook = new Cookies();
     let user = cook.get('user')
     let navigate = useNavigate()
-    const [item, setItem] = useState({})
     let quantity = useRef()
     const [rate, setRate] = useState(0)
     const numStar = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    // const [item, setItem] = useState({})
+    // useEffect(() => {
+    //     axios.get(`http://localhost:3003/book/${id}`)
+    //         .then(res => {
+    //             let book = res.data[0]
+    //             setItem(book)
+
+    //         })
+    //         .catch(error => console.log(error));
+    // }, []);
+
     useEffect(() => {
-        axios.get(`http://localhost:3003/book/${id}`)
-            .then(res => {
-                let book = res.data[0]
-                setItem(book)
+        if (user && item) {
+            axios.get(`http://localhost:3003/ratings?userId=${user}&&bookId=${item["book_id"]}`)
+                .then(res => {
+                    let data = res.data
+                    if (data) {
+                        setRate(data.rating)
+                    }
+                    else {
+                        setRate(0)
+                    }
 
-            })
-            .catch(error => console.log(error));
-    }, []);
-
-    useEffect(() => {
-        if (user && id!=1) {
-        axios.get(`http://localhost:3003/ratings?userId=${user}&&bookId=${id}`)
-            .then(res => {
-                let data = res.data
-                if (data) {
-                    setRate(data.rating)
-                }
-                else {
-                    setRate(0)
-                }
-
-            })
-            .catch(error => console.log(error));
+                })
+                .catch(error => console.log(error));
         }
     }, [item]);
     const handelAddToCart = async () => {
-        if (user) {
-            let cartItem = { "user_id": user, "book_id": item.book_id, "quantity": parseInt(quantity.current.value) }
+        if (user && item) {
+            let cartItem = { "user_id": user, "book_id": item["book_id"], "quantity": parseInt(quantity.current.value) }
             await axios.post("http://localhost:3003/carts", cartItem)
             toast.success("Add to cart successfully");
         }
     }
     const handelRate = (num) => {
-        if (user) {
+        if (user && item) {
             setRate(num)
             let data = {
                 "userId": user,
-                "bookId": id,
+                "bookId": item["book_id"],
                 "rating": num
             }
             axios.post("http://localhost:3003/ratings", data)
@@ -75,7 +75,7 @@ const Item = ({ id = 1 }) => {
                             numStar.map((item) => {
                                 return (
                                     item > rate
-                                        ? <AiFillStar onc style={{ marginTop: -30 }} color="rgb(192,192,192)" onClick={() => handelRate(item)} />
+                                        ? <AiFillStar style={{ marginTop: -30 }} color="rgb(192,192,192)" onClick={() => handelRate(item)} />
                                         : <AiFillStar style={{ marginTop: -30 }} color="#FFDF35" onClick={() => handelRate(item)} />
                                 )
                             })
