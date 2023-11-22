@@ -10,37 +10,37 @@ const OverView = ({ item }) => {
     let user = cook.get('user')
     let navigate = useNavigate()
     const numStar = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const [rate, setRate] = useState(0)
-    useEffect(() => {
-        if (user && item) {
-            axios.get(`http://localhost:3003/ratings?userId=${user}&&bookId=${item['book_id']}`)
-                .then(res => {
-                    let data = res.data
-                    if (data) {
-                        setRate(data.rating)
-                    }
-                    else {
-                        setRate(0)
-                    }
+    // const [rate, setRate] = useState(0)
+    // useEffect(() => {
+    //     if (user && item) {
+    //         axios.get(`http://localhost:3003/ratings?userId=${user}&&bookId=${item['book_id']}`)
+    //             .then(res => {
+    //                 let data = res.data
+    //                 if (data) {
+    //                     setRate(data.rating)
+    //                 }
+    //                 else {
+    //                     setRate(0)
+    //                 }
 
-                })
-                .catch(error => console.log(error));
-        }
-    }, [item]);
-    const handelRate = (num) => {
-        if (user && item) {
-            setRate(num)
-            let data = {
-                "userId": user,
-                "bookId": item['book_id'],
-                "rating": num
-            }
-            axios.post("http://localhost:3003/ratings", data)
-        }
-        else {
-            navigate('/login')
-        }
-    }
+    //             })
+    //             .catch(error => console.log(error));
+    //     }
+    // }, [item]);
+    // const handelRate = (num) => {
+    //     if (user && item) {
+    //         setRate(num)
+    //         let data = {
+    //             "userId": user,
+    //             "bookId": item['book_id'],
+    //             "rating": num
+    //         }
+    //         axios.post("http://localhost:3003/ratings", data)
+    //     }
+    //     else {
+    //         navigate('/login')
+    //     }
+    // }
     const handelDetail = () => {
         if (item) {
             navigate(`/product/${item['book_id']}`)
@@ -58,7 +58,7 @@ const OverView = ({ item }) => {
                         </div>
                         <div style={{ width: "70%", position: "relative" }} >
                             <p style={{ textAlign: "justify", fontWeight: "bold", width: "90%" }}>{item['book_title']}</p>
-                            <div >
+                            {/* <div >
                                 {
                                     numStar.map((item) => {
                                         return (
@@ -69,7 +69,7 @@ const OverView = ({ item }) => {
                                     })
 
                                 }
-                            </div>
+                            </div> */}
                             <p style={{ marginTop: -10 }}>${item['price']} USD</p>
                         </div>
                     </div>

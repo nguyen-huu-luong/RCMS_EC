@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -6,23 +7,15 @@ class RCMModel(object):
   def __init__(self, df, books_df):
     self.df = df
     self.books_df = books_df
+    self.n = 10
 
-  def popular_books(self, n=10):
-    res = popular_books(self.df, n)
-    if not res["result"].empty:
-        res["result"] = res["result"].merge(self.books_df, on="book_id")
+  def popular_books(self):
+    res = popular_books(self.df, self.n)
+    res["result"] = res["result"].merge(self.books_df, on="book_id")
     return res
 
-  def item_based_cf(self, book_id):
-    res = item_based(self.df, book_id)
-    if not res["result"].empty:
-        res["result"] = res["result"].merge(self.books_df, on="book_id")    
-    return res
-
-  def content_based_cf(self, book_id):
-    res = content_based(self.df, book_id)
-    if not res["result"].empty:
-        res["result"] = res["result"].merge(self.books_df, on="book_id")    
+  def item_based(self, book_id):
+    res = item_based(self.df, self.books_df, book_id, m=self.n)
     return res
   
 def popular_books(df, n=10):
@@ -50,71 +43,71 @@ def popular_books(df, n=10):
 
     return {"result": return_df, "recommend": 1}
 
-def item_based(df, bookId):
+def item_based(df, books_df, bookId, m=10):
+  if bookId in books_df["book_id"].values:
+    index=books_df[books_df["book_id"]==bookId]["index"].values[0]
+    similarity=cosine_similarity(np.transpose((fill_matrix(df, books_df)[0])))
+    similar_books=list(enumerate(similarity[index]))
+    similar_booksSorted=sorted(similar_books,key=lambda x:x[1],reverse=True)[1:(1+m)]
 
-    if bookId in df["book_id"].values:
-        rating_count=pd.DataFrame(df["book_id"].value_counts())
-        rare_books=rating_count[rating_count["book_id"]<=3].index
-        common_books=df[~df["book_id"].isin(rare_books)]
+    recommend_books = books_df[books_df['index'].isin([x[0] for x in similar_booksSorted])]
+    return {"result": recommend_books.head(m), "recommend": 1}
+  else:
+    print("COULD NOT FIND BOOK")
+    return {"recommend": 0}
+  
+def fill_matrix(df, books_df):
+  utility_matrix = build_utility_matrix(df)
+  similar_indexes = similar_content_books(books_df, 10)
+  fill_count = 0
 
-        if bookId in rare_books:
-            most_common=pd.DataFrame(pd.Series(common_books["book_id"].unique()).sample(10), columns=["book_id"])
-            print("No Recommendations for this Book \n ")
-            print("YOU MAY TRY: \n ")
+  for (index_x, index_y), value in np.ndenumerate(utility_matrix):
+    if value != 0: 
+      continue
+    total_sum = 0
+    count = 0
+    for book_index in similar_indexes[index_y]:
+      if utility_matrix[index_x, book_index] != 0:
+        total_sum += utility_matrix[index_x, book_index]
+        count += 1
+    if count != 0:
+      utility_matrix[index_x][index_y] = total_sum / count
+      fill_count += 1
 
-            return {"result": most_common, "recommend": 0}
-        else:
-            common_books_pivot=common_books.pivot_table(index=["user_id"],columns=["book_id"],values="rating")
-            title=common_books_pivot[bookId]
-            recommendation_df=pd.DataFrame(common_books_pivot.corrwith(title).sort_values(ascending=False)).reset_index(drop=False)
+  return utility_matrix, fill_count
 
-            if bookId in [title for title in recommendation_df["book_id"]]:
-                recommendation_df=recommendation_df.drop(recommendation_df[recommendation_df["book_id"]==bookId].index[0])
+def build_utility_matrix(df, rows=100, cols=1000):
+  utility_matrix = np.zeros((rows, cols))
 
-            less_rating=[]
-            for i in recommendation_df["book_id"]:
-                if df[df["book_id"]==i]["rating"].mean() < 5:
-                    less_rating.append(i)
-            if recommendation_df.shape[0] - len(less_rating) > 5:
-                recommendation_df=recommendation_df[~recommendation_df["book_id"].isin(less_rating)]
+  for _, row in df.iterrows():
+    index_x = row['index_x']
+    index_y = row['index_y']
+    rating = row['rating']
+    utility_matrix[index_x, index_y] = rating
 
-            recommendation_df=recommendation_df[0:10]
-            recommendation_df.columns=["book_id","correlation"]
-            return {"result": recommendation_df, "recommend": 1}
-    else:
-        print("COULD NOT FIND BOOK")
-        return {"result": pd.DataFrame(), "recommend": 0}
-    
-def content_based(df, bookId):
-    if bookId in df["book_id"].values:
-        rating_count=pd.DataFrame(df["book_id"].value_counts())
-        rare_books=rating_count[rating_count["book_id"]<=3].index
-        common_books=df[~df["book_id"].isin(rare_books)]
+  def normalization(matrix):
+    non_zero_mask = matrix != 0
+    row_sums = np.sum(matrix, axis=1, keepdims=True)
+    row_counts = np.sum(non_zero_mask, axis=1, keepdims=True)
+    row_averages = np.divide(row_sums, row_counts, where=row_counts != 0)
+    normalized_matrix = np.where(non_zero_mask, matrix - row_averages, 0)
+    return normalized_matrix
 
-        if bookId in rare_books:
-            most_common=pd.DataFrame(pd.Series(common_books["book_id"].unique()).sample(10), columns=["book_id"])
-            print("No Recommendations for this Book \n ")
-            print("YOU MAY TRY: \n ")
+  return normalization(utility_matrix)
 
-            return {"result": most_common, "recommend": 0}
-        else:
-            common_books=common_books.drop_duplicates(subset=["book_title"])
-            common_books.reset_index(inplace=True)
-            common_books["index"]=[i for i in range(common_books.shape[0])]
-            targets=["book_title","book_author","publisher"]
-            common_books["all_features"] = [" ".join(common_books[targets].iloc[i,].values) for i in range(common_books[targets].shape[0])]
+def similar_content_books(df, m=10):
+  new_df=df.copy()
+  targets=["book_title","book_author","publisher"]
+  new_df["all_features"] = [" ".join(new_df[targets].iloc[i,].values) for i in range(new_df[targets].shape[0])]
 
-            vectorizer=CountVectorizer()
-            common_booksVector=vectorizer.fit_transform(common_books["all_features"])
-            similarity=cosine_similarity(common_booksVector)
-            index=common_books[common_books["book_id"]==bookId]["index"].values[0]
-            similar_books=list(enumerate(similarity[index]))
-            similar_booksSorted=sorted(similar_books,key=lambda x:x[1],reverse=True)[1:11]
+  vectorizer=CountVectorizer()
+  new_dfVector=vectorizer.fit_transform(new_df["all_features"])
+  similarity=cosine_similarity(new_dfVector)
 
-            recommend_books = common_books[common_books['index'].isin([x[0] for x in similar_booksSorted])]
-            recommend_books.drop(columns=['index'], inplace=True)
-
-            return {"result": recommend_books[["user_id", "book_id", "rating", "all_features"]], "recommend": 1}
-    else:
-        print("COULD NOT FIND BOOK")
-        return {"result": pd.DataFrame(), "recommend": 0}
+  result={}
+  for index in new_df["index"].values:
+    similar_books=list(enumerate(similarity[index]))
+    similar_booksSorted=sorted(similar_books,key=lambda x:x[1],reverse=True)[1:(1+m)]
+    result[index] = [x[0] for x in similar_booksSorted]
+  
+  return result
